@@ -1,0 +1,7 @@
+name: Documentation Drift Check
+emoji: 📚
+description: An agentic workflow that reviews each merged pull request and opens a PR updating documentation the merge made wrong or incomplete.
+license: MIT
+min-version: v0.86.0
+includes:
+  - workflows/documentation-drift-check.md

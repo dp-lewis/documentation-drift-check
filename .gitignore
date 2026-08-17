@@ -1,0 +1,3 @@
+# Compiled workflows are generated at install time in the consuming repository,
+# not checked into this package source.
+*.lock.yml
