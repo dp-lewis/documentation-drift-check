@@ -29,7 +29,7 @@ That installs the workflow package and compiles it into
 To install a specific release:
 
 ```bash
-gh aw add dp-lewis/documentation-drift-check@v1.0.0
+gh aw add dp-lewis/documentation-drift-check@v2.0.0
 ```
 
 To pick up later upstream changes:
@@ -37,6 +37,11 @@ To pick up later upstream changes:
 ```bash
 gh aw update documentation-drift-check
 ```
+
+An install pinned to a tag updates to the latest release within the same major
+version. Crossing a major version — where the workflow's write scope or tool
+access has widened — needs `gh aw update documentation-drift-check --major`, so
+that you review the change before adopting it.
 
 ## Requirements in the consuming repository
 
