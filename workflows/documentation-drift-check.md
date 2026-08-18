@@ -3,6 +3,18 @@ description: Reviews a merged pull request and opens a PR updating any documenta
 emoji: 📚
 engine: copilot
 tools:
+  bash:
+    - "ls"
+    - "cat"
+    - "head"
+    - "tail"
+    - "grep"
+    - "find"
+    - "wc"
+    - "sort"
+    - "uniq"
+    - "git log:*"
+    - "git show:*"
   edit:
   github:
     toolsets:
@@ -23,6 +35,9 @@ safe-outputs:
     max: 1
     allowed-files:
       - "docs/**"
+      - "doc/**"
+      - "documentation/**"
+      - "website/docs/**"
       - "README*"
 on:
   pull_request:
@@ -46,6 +61,24 @@ documentation change. Changing nothing is a correct and expected outcome.
 - PR title, description, and linked issues
 - Read access to the repository and safe-output ability to open a PR
 
+## Repository conventions
+
+This repository's own conventions take precedence over anything stated below.
+Where the repository declares a convention and this prompt states a default, follow
+the repository.
+
+Some instruction files are already loaded into your context automatically. Read
+`AGENTS.md` at the repository root if it exists, since that location is not always
+loaded. Where it is silent on a point, do not go hunting further — take the default
+and move on.
+
+## Documentation location
+
+The documentation tree is `docs/` unless the repository shows otherwise; if it is
+absent, check `doc/`, `documentation/` and `website/docs/`. Also cover `README*` at
+the repository root, and any OpenAPI or JSON schema files within the documentation
+tree. If the repository has no documentation tree, only `README*` is in scope.
+
 ## Method
 
 1. From the diff alone, list changes with an externally observable surface:
@@ -55,10 +88,9 @@ documentation change. Changing nothing is a correct and expected outcome.
 2. Discard changes with no such surface: internal refactors, test-only changes,
    formatting, dependency bumps with no behavioural change, comments.
 3. If step 1 is empty, stop and follow the no-op path in Output.
-4. For each remaining change, search `./docs` for anything that describes it.
-   Grep for old identifiers, old flag strings, old paths and old literal values,
-   then search for the concept in prose. Also cover `README*` at the repository
-   root and any OpenAPI or JSON schema files under `./docs`.
+4. For each remaining change, search the documentation for anything that describes
+   it. Grep for old identifiers, old flag strings, old paths and old literal values,
+   then search for the concept in prose.
 5. Classify each hit:
    - **Contradicted** — documentation now states something false.
    - **Incomplete** — a new user-facing capability is undocumented in an area
@@ -66,58 +98,43 @@ documentation change. Changing nothing is a correct and expected outcome.
    - **Fine** — still accurate, or never documented and does not need to be.
 6. Act only on Contradicted and Incomplete.
 
-## Documentation structure
+## Editing rules
 
-`./docs` follows Diátaxis. The folder determines whether and how you may edit:
+How freely you may edit a file depends on how much its later content depends on its
+earlier content. Judge that from the file itself, not from its path.
 
-- `reference/` — factual description of the system's surface. Tracks the code
-  most directly, so expect most drift here. Edit freely within the evidence rule.
-- `how-to/` — goal-directed recipes. Correct commands, flags, paths, outputs and
-  prerequisites the change has invalidated. Never change the goal or reorder the
-  sequence.
-- `tutorials/` — a guided learning path where each step depends on the last.
-  Correct a step only after verifying the change does not invalidate any later
-  step in the same tutorial. If it does, make no edit to that file and list it
-  in the PR body under **Needs human attention**, with the reason.
-- `explanation/` — conceptual background. A code change rarely makes an
-  explanation false. Edit only where the change contradicts a stated fact.
-  Never edit to add detail about the new work.
+- **Independent entries** — reference tables, API and CLI listings, configuration
+  options, error catalogues. Each entry stands alone, so correcting one cannot
+  invalidate another. This is where drift concentrates. Edit freely within the
+  evidence rule.
+- **Ordered procedures** — tutorials, quickstarts, walkthroughs, migration guides.
+  Each step depends on the state left by the step before it. Correct a step only
+  after verifying the change does not invalidate any later step in the same
+  document. If it does, make no edit to that file and list it in the PR body under
+  **Needs human attention**, with the reason.
+- **Goal-directed recipes** — task-oriented how-to material. Correct the commands,
+  flags, paths, outputs and prerequisites the change has invalidated. Never change
+  the stated goal, and never reorder the sequence.
+- **Conceptual prose** — rationale, architecture overviews, background. A code
+  change rarely makes an explanation false. Edit only where the change contradicts
+  a stated fact. Never edit to add detail about the new work.
 
-For an **Incomplete** item, place the addition in the quadrant that already
-documents the nearest comparable capability, and follow that file's existing
-pattern. Never move content between quadrants. Never create a new file: if the
-capability has no existing home, record it under **Needs human attention**
-instead.
+Match the file you are editing: its voice, terminology, heading depth and
+formatting conventions.
+
+For an **Incomplete** item, place the addition in the file that already documents
+the nearest comparable capability, and follow that file's existing pattern. Never
+move content between files. Never create a new file: if the capability has no
+existing home, record it under **Needs human attention** instead.
 
 ## Glossary
 
-The glossary lives in `./docs/reference`. Where a change introduces a new term
-to the project's shared vocabulary, add it there.
-
-A term qualifies only if all of the following hold:
-
-- It names a domain or user-facing concept — something a reader would encounter
-  in the product, the API surface, or the documentation prose.
-- It is not an internal implementation name: class, module, service, variable
-  and file names do not qualify, however new they are.
-- It appears in prose in at least one document under `./docs`, or in a
-  user-facing surface named in Method step 1.
-- No existing entry already covers it under a different spelling, casing,
-  abbreviation or synonym. Check before adding.
-
-If a term qualifies:
-
-- Write one definition in the voice and length of the surrounding entries, and
-  insert it in the glossary's existing order. Do not restructure the file.
-- Define the term on its own. Do not describe the pull request, the change, or
-  when the term was introduced.
-- If the glossary file does not exist, do not create one. Record the term under
-  **Needs human attention** instead.
-
-Where a change renames an existing term, update that entry in place and correct
-references to the old term elsewhere in `./docs` under the normal evidence rule.
-Where a change removes a concept entirely, do not delete the entry — record it
-under **Needs human attention**, since retiring vocabulary is a human decision.
+Correct a falsified glossary entry as you would any other reference file. Do not
+add a new term unless this repository's conventions ask you to maintain the
+glossary — record the candidate under **Needs human attention** instead — and
+check for the same concept under another spelling or abbreviation before you do.
+Never delete an entry for a concept the change retired; record that too. Coining
+and retiring vocabulary are human decisions.
 
 ## Evidence rule
 
@@ -140,9 +157,11 @@ Otherwise:
 1. Apply the edits directly to the affected documentation files. Change no more
    than the code change requires: match the surrounding voice, terminology and
    heading structure, and leave everything else untouched.
-2. Make no changes outside `./docs` and the repository root `README*`. Never
-   modify source code, tests, or configuration.
-3. Open one pull request for all edits, titled `docs: update for #${{ github.event.pull_request.number }}`.
+2. Make no changes outside the documentation tree and the repository root
+   `README*`. Never modify source code, tests, or configuration.
+3. Open one pull request for all edits. Title it `docs: update for #${{ github.event.pull_request.number }}`,
+   unless this repository has an evident pull request title convention, in which
+   case follow that instead.
 4. In the PR body, one entry per changed file, Contradicted first:
 
    ### `docs/reference/thing.md`
@@ -150,22 +169,9 @@ Otherwise:
    - **Reason:** one sentence naming the specific change.
    - **Evidence:** `src/thing.ts:120-134` → `docs/reference/thing.md:45-48`
 
-5. If any item was deferred under the Documentation structure rules, close the
-   PR body with a **Needs human attention** heading listing each one, using the
-   same entry format with the reason for deferral in place of the edit.
-
-## Commit format
-
-Every commit you create must end with this trailer, preceded by a blank line
-and placed last in the message with nothing after it:
-
-```
-Co-authored-by: Copilot Autofix
-```
-
-This applies to every commit without exception, including amended commits and
-any follow-up commits made in response to review feedback. If you cannot write
-the trailer, do not commit.
+5. If any item was deferred under the editing rules, close the PR body with a
+   **Needs human attention** heading listing each one, using the same entry format
+   with the reason for deferral in place of the edit.
 
 ## Constraints
 
