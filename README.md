@@ -64,6 +64,8 @@ that you review the change before adopting it.
   candidate terms are listed for a human instead. The workflow never creates one.
 - **Branch cleanup (recommended):** enable *Automatically delete head branches*
   (Settings → General). See the note below.
+- **CI on the generated PR (optional):** no CI runs on the documentation pull
+  request unless you opt in. See the note below.
 
 ### Note on the checked-out ref
 
@@ -80,6 +82,33 @@ disabling checkout altogether. For a *merged* PR this means:
 Enabling automatic head-branch deletion keeps the workflow on the first path.
 `checkout: fetch-depth: 0` is set so the full history is available for the
 merge-base calculation that backs the generated pull request.
+
+### Note on CI for the generated pull request
+
+Pull requests created with the default `GITHUB_TOKEN` do not trigger workflow
+runs. That is a GitHub Actions safeguard against event cascades, not something
+this workflow controls, and it means no CI runs on the documentation PR by
+default.
+
+gh-aw's remedy is a magic secret. If `GH_AW_CI_TRIGGER_TOKEN` is defined in your
+repository, the safe-output job pushes an empty `ci: trigger checks` commit to
+the PR branch, which does fire `push` and `pull_request` events. Nothing in this
+workflow references that secret: the compiler writes
+`${{ secrets.GH_AW_CI_TRIGGER_TOKEN }}` into every generated `.lock.yml`, and an
+undefined secret evaluates to an empty string, so defining the secret is the
+entire activation step. It applies to every gh-aw workflow in the repository, not
+only this one.
+
+The trade is one zero-change commit in the PR history against having linters and
+link checkers actually run on prose an agent rewrote. For this workflow that
+trade is usually worth taking.
+
+Two things that do not help. Setting `github-token-for-extra-empty-commit: app`
+changes who authors the empty commit but does not remove it — the commit *is* the
+mechanism. Overriding `github-token` with a personal access token does remove it,
+but the pull request then appears to be authored by a person rather than by the
+bot, which is worth avoiding here: the review model depends on agent-proposed
+changes being visibly distinguishable from human ones.
 
 ## What it does
 
