@@ -45,13 +45,18 @@ gh aw update documentation-drift-check
 - **Actions setting:** *Allow GitHub Actions to create and approve pull requests*
   must be enabled (Settings → Actions → General), or the safe output has no way
   to open the PR.
-- **Docs layout:** the workflow expects a `./docs` tree organised by
-  [Diátaxis](https://diataxis.fr/) — `reference/`, `how-to/`, `tutorials/`,
-  `explanation/` — and treats each quadrant differently. It also covers `README*`
-  at the repository root. A repository without `./docs` will simply find nothing
-  to change.
-- **Glossary (optional):** if `docs/reference` contains a glossary, new
-  domain terms are added to it. The workflow never creates one.
+- **Docs layout:** none assumed. The workflow looks for a `docs/` tree — falling
+  back to `doc/`, `documentation/` or `website/docs/` — plus `README*` at the
+  repository root, and decides how cautiously to edit each file from that file's
+  own structure rather than from its path. A repository with no docs tree simply
+  has less to change.
+- **Conventions:** commit format, pull request titles and prose style are read
+  from wherever your repository already keeps them, not imposed by the workflow.
+  See [Conventions](#conventions).
+- **Glossary (optional):** an existing glossary is corrected like any other
+  reference file. Adding *new* terms is opt-in — it happens only where your
+  repository's conventions ask for the glossary to be maintained; otherwise
+  candidate terms are listed for a human instead. The workflow never creates one.
 - **Branch cleanup (recommended):** enable *Automatically delete head branches*
   (Settings → General). See the note below.
 
@@ -80,10 +85,13 @@ On a pull request merged into `main`:
    build and deploy steps, defaults and limits, error messages, renamed or
    removed capabilities. Internal refactors, tests, formatting and dependency
    bumps are discarded.
-2. Searches `./docs` and root `README*` for anything describing those surfaces,
-   and classifies each hit as **Contradicted**, **Incomplete**, or **Fine**.
-3. Edits only the Contradicted and Incomplete files, following the rules for the
-   Diátaxis quadrant each one lives in.
+2. Searches the docs tree and root `README*` for anything describing those
+   surfaces, and classifies each hit as **Contradicted**, **Incomplete**, or
+   **Fine**.
+3. Edits only the Contradicted and Incomplete files, editing each one as freely as
+   its structure safely allows — reference-style entries stand alone and are
+   corrected directly, while ordered procedures are left untouched if the fix
+   would invalidate a later step.
 4. Opens one pull request titled `docs: update for #<PR number>`, with an entry
    per changed file citing both the diff hunk that caused the drift and the
    documentation lines that were wrong.
@@ -97,14 +105,37 @@ Every change must cite both the causing diff hunk and the affected documentation
 lines. Where that evidence is missing, the workflow leaves the file alone: a
 missed item costs less than a false one.
 
+## Conventions
+
+The workflow imposes as little of its own house style as it can. Commit format,
+pull request titles and prose style are repository-wide concerns that exist
+independently of drift checking, so they are read from where your repository
+already keeps them rather than restated here.
+
+gh-aw's engines load instruction files automatically: the Copilot engine reads
+`.github/AGENTS.md`, and the Claude engine reads `CLAUDE.md`. The workflow
+additionally reads `AGENTS.md` at the repository root, which is the more common
+location but is not loaded automatically. Whatever those files say about commit
+messages and trailers governs — the workflow mandates no trailer of its own.
+
+Where your repository says nothing, the defaults are a pull request titled
+`docs: update for #<PR number>` and no commit trailer.
+
 ## Safety
 
 The workflow is read-only against the repository and writes exclusively through
 gh-aw [safe outputs](https://github.github.com/gh-aw/reference/safe-outputs/):
 
 - `permissions` grants only `read` scopes, plus `copilot-requests: write`.
-- `safe-outputs.create-pull-request.allowed-files` restricts the PR to
-  `docs/**` and `README*`. Source, tests and configuration cannot be modified.
+- `safe-outputs.create-pull-request.allowed-files` restricts the PR to the
+  common documentation roots (`docs/**`, `doc/**`, `documentation/**`,
+  `website/docs/**`) and `README*`. Source, tests and configuration cannot be
+  modified. This list is the security boundary and is deliberately not inferred at
+  runtime — narrow it to the single root your repository actually uses.
+- `tools.bash` is an allowlist of read-only inspection commands (`ls`, `cat`,
+  `grep`, `find`, `git log`, and similar) needed to search the docs tree. gh-aw
+  adds the git commands its pull request machinery requires; nothing else is
+  permitted.
 - `max: 1` — at most one pull request per run.
 - gh-aw's own defaults additionally protect top-level dot-folders and common
   manifest and lockfile paths.
@@ -133,9 +164,7 @@ Common adjustments:
 
 Switching `engine` away from `copilot` requires the corresponding secret in the
 consuming repository (for example `ANTHROPIC_API_KEY` for `claude`), and the
-`copilot-requests: write` permission can then be dropped. The `Co-authored-by:
-Copilot Autofix` commit trailer in the prompt body assumes the Copilot engine —
-update it if you switch.
+`copilot-requests: write` permission can then be dropped.
 
 ## Repository layout
 
