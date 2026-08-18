@@ -39,6 +39,9 @@ safe-outputs:
       - "documentation/**"
       - "website/docs/**"
       - "README*"
+    protected-files:
+      exclude:
+        - "README.md"
 on:
   pull_request:
     types: [closed]
