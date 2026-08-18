@@ -142,8 +142,15 @@ gh-aw [safe outputs](https://github.github.com/gh-aw/reference/safe-outputs/):
   adds the git commands its pull request machinery requires; nothing else is
   permitted.
 - `max: 1` — at most one pull request per run.
-- gh-aw's own defaults additionally protect top-level dot-folders and common
-  manifest and lockfile paths.
+- gh-aw's own defaults additionally protect top-level dot-folders, common
+  manifest and lockfile paths, and common top-level documents — including
+  `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md` and `AGENTS.md`. Those stay
+  protected.
+- `protected-files.exclude` lifts that protection for `README.md` alone. gh-aw
+  protects it by default, which conflicts with this workflow's purpose: a
+  protected file makes the push fail and the run degrade into an issue carrying
+  manual recovery steps, rather than opening the pull request. `README.md` is
+  still bounded by `allowed-files`; every other protected path is untouched.
 
 The agent never pushes to a branch directly; the PR is created by a separate
 job from the collected safe output.
