@@ -13,6 +13,7 @@ tools:
     - "wc"
     - "sort"
     - "uniq"
+    - "jq"
     - "git log:*"
     - "git show:*"
   edit:
@@ -175,6 +176,14 @@ Otherwise:
 5. If any item was deferred under the editing rules, close the PR body with a
    **Needs human attention** heading listing each one, using the same entry format
    with the reason for deferral in place of the edit.
+6. The body is multi-line markdown and shell quoting will not carry it intact.
+   Write it to `/tmp/gh-aw/agent/pr-body.md` first, then pass it as a JSON string
+   with `jq -Rs`, supplying the remaining fields as `--arg` values. Check
+   `safeoutputs create_pull_request --help` for the required parameters.
+7. Call `create_pull_request` exactly once, after the branch is committed and the
+   title and body are final. It is not a sandbox and there is no second attempt:
+   never call it with placeholder content to check the syntax. If you cannot
+   produce the real pull request, call `report_incomplete` and say why.
 
 ## Constraints
 
