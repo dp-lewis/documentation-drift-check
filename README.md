@@ -29,7 +29,7 @@ That installs the workflow package and compiles it into
 To install a specific release:
 
 ```bash
-gh aw add dp-lewis/documentation-drift-check@v2.0.0
+gh aw add dp-lewis/documentation-drift-check@v2.0.1
 ```
 
 To pick up later upstream changes:
